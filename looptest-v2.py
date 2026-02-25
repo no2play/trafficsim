@@ -1,24 +1,19 @@
 from scapy.all import *
-import random
 
-filename = "network_loop_emergency.pcap"
+# สร้าง STP Configuration BPDU (Topology Change) แบบดิบ
+# \x00\x00\x00\x01 = Proto ID 0, Version 0, BPDU Type 0, Flags 0x01 (TC)
+stp_raw_payload = b"\x00\x00\x00\x01\x80\x00\x00\x1c\x0e\x87\x78\x00\x00\x00\x00\x04\x80\x04\x00\x00"
+
+filename = "final_loop_test.pcap"
 packets = []
 
-print("Generating Network Loop & Storm Scenario...")
-
-# 1. จำลอง STP Topology Change (สัญญาณของการเสียบสายสลับไปมา)
-for i in range(50):
-    # สร้าง STP Config BPDU ที่บอกว่ามีการเปลี่ยนผัง (TC flag = 1)
-    stp_pkt = Ether(dst="01:80:c2:00:00:00") / STP(proto=0, flags=0x01)
-    packets.append(stp_pkt)
-
-# 2. จำลอง ARP Storm (ผลกระทบจาก Loop)
-# ส่ง 10,000 packets ด้วยความเร็วสูง (จำลองการวนลูปไม่รู้จบ)
+print("Generating 10,000 High-Intensity Loop Packets...")
 for i in range(10000):
-    # สุ่ม MAC ต้นทางจำลองว่า Loop ทำให้เกิดความสับสนในตาราง MAC Table
-    rand_mac = "00:11:22:%02x:%02x:%02x" % (random.randint(0,255), random.randint(0,255), random.randint(0,255))
-    arp_pkt = Ether(src=rand_mac, dst="ff:ff:ff:ff:ff:ff") / ARP(op=1, pdst="192.168.1.254")
-    packets.append(arp_pkt)
+    # ใช้ LLC Layer หุ้ม STP Payload
+    pkt = Dot3(dst="01:80:c2:00:00:00", src="00:1c:0e:87:85:04") / \
+          LLC(dsap=0x42, ssap=0x42, ctrl=3) / \
+          Raw(load=stp_raw_payload)
+    packets.append(pkt)
 
 wrpcap(filename, packets)
-print(f"Created {filename} successfully. Please import to Nozomi.")
+print(f"Done! PCAP generated: {filename}")
