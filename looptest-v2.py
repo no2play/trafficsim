@@ -9,7 +9,7 @@ print("Generating Network Loop & Storm Scenario...")
 # 1. จำลอง STP Topology Change (สัญญาณของการเสียบสายสลับไปมา)
 for i in range(50):
     # สร้าง STP Config BPDU ที่บอกว่ามีการเปลี่ยนผัง (TC flag = 1)
-    stp_pkt = Ether(dst="01:80:c2:00:00:00") / STP(type=0x00, proto=0, flags=0x01)
+    stp_pkt = Ether(dst="01:80:c2:00:00:00") / STP(proto=0, flags=0x01)
     packets.append(stp_pkt)
 
 # 2. จำลอง ARP Storm (ผลกระทบจาก Loop)
